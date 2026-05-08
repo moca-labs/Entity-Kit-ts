@@ -3,8 +3,11 @@
 TypeScript 데코레이터 기반 JSON 매핑 및 직렬화 라이브러리입니다.  
 API 응답 JSON을 TypeScript 클래스 인스턴스로 자동 변환하고, 반대로 직렬화하는 기능을 제공합니다.
 
-**의존성**
-- `reflect-metadata` ^0.2.2
+## 설치
+
+```bash
+npm install @moca-labs/entity-kit-ts reflect-metadata
+```
 
 tsconfig.json에 다음 옵션이 필요합니다.
 

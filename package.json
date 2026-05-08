@@ -1,6 +1,6 @@
 {
   "name": "@moca-labs/entity-kit-ts",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "TypeScript 엔티티 데코레이터 Kit - JSON 매핑 및 직렬화",
   "main": "dist/index.js",
   "module": "dist/index.js",
