@@ -3,19 +3,24 @@
 TypeScript 데코레이터 기반 JSON 매핑 및 직렬화 라이브러리입니다.  
 API 응답 JSON을 TypeScript 클래스 인스턴스로 자동 변환하고, 반대로 직렬화하는 기능을 제공합니다.
 
+## 요구사항
+
+- **TypeScript 5.0 이상** — TC39 stage 3 네이티브 데코레이터를 사용합니다.
+- `experimentalDecorators`, `emitDecoratorMetadata`, `reflect-metadata` 는 필요하지 않습니다.
+
 ## 설치
 
 ```bash
-npm install @moca-labs/entity-kit-ts reflect-metadata
+npm install @moca-labs/entity-kit-ts
 ```
 
-tsconfig.json에 다음 옵션이 필요합니다.
+tsconfig.json에 별도 데코레이터 설정은 필요 없습니다.  
+단, `"experimentalDecorators": true` 가 설정되어 있으면 제거해야 합니다.
 
 ```json
 {
   "compilerOptions": {
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "target": "ES2022"
   }
 }
 ```
@@ -27,12 +32,6 @@ tsconfig.json에 다음 옵션이 필요합니다.
 ```ts
 import McEntity from "@moca-labs/entity-kit-ts";
 import { McSerializable, IMcSerializable } from "@moca-labs/entity-kit-ts";
-```
-
-엔트리포인트에 `reflect-metadata`를 한 번 import해야 합니다.
-
-```ts
-import "reflect-metadata";
 ```
 
 ---
@@ -84,8 +83,8 @@ JSON의 특정 키 또는 경로를 TypeScript 필드에 매핑합니다.
 JSON 오브젝트를 `Map<K, V>`로 매핑합니다.
 
 ```ts
-@McEntity.MAP_FIELD(UserEntity)           // Map<string, UserEntity>
-@McEntity.MAP_FIELD([UserEntity])         // Map<string, UserEntity[]>
+@McEntity.MAP_FIELD(UserEntity)                // Map<string, UserEntity>
+@McEntity.MAP_FIELD([UserEntity])              // Map<string, UserEntity[]>
 @McEntity.MAP_FIELD(Number, "scores", Number)  // Map<number, number>
 ```
 
@@ -110,7 +109,6 @@ private onLoad(raw: any) { return raw.trim(); }
 ## 예제
 
 ```ts
-import "reflect-metadata";
 import McEntity from "@moca-labs/entity-kit-ts";
 
 @McEntity.ENTITY
@@ -145,10 +143,30 @@ const user = new UserEntity({
   },
 });
 
-console.log(user.userName);          // "Alice"
-console.log(user.addresses[0].zipCode); // 12345
+console.log(user.userName);               // "Alice"
+console.log(user.addresses[0].zipCode);  // 12345
 
 // 인스턴스 → JSON
 console.log(user.toJson());
 // { user_name: "Alice", age: 30 }
 ```
+
+---
+
+## 데모
+
+인터랙티브 데모 UI를 로컬에서 실행할 수 있습니다.
+
+```bash
+npm run demo
+```
+
+브라우저에서 `http://localhost:5173` 을 열면 7가지 데코레이터 사용 예시를 확인할 수 있습니다.
+
+- **01 ENTITY** — 기본 엔티티 매핑
+- **02 FIELD** — 키 매핑 / 경로 / 배열 / 기본값
+- **03 NESTED** — 중첩 엔티티 자동 변환
+- **04 MAP_FIELD** — Map 타입 매핑
+- **05 CUSTOM_FIELD** — 커스텀 변환 함수
+- **06 SERIALIZE** — `toJson()` 직렬화
+- **07 COMPLEX** — 복합 시나리오

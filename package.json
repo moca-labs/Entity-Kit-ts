@@ -1,47 +1,49 @@
 {
-  "name": "@moca-labs/entity-kit-ts",
-  "version": "0.2.0",
-  "description": "TypeScript 엔티티 데코레이터 Kit - JSON 매핑 및 직렬화",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.js"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "scripts": {
-    "build": "rm -rf dist && tsc",
-    "prepublishOnly": "npm run build"
-  },
-  "keywords": [
-    "typescript",
-    "decorator",
-    "entity",
-    "json-mapping",
-    "moca-labs"
-  ],
-  "author": "IDEa Team",
-  "license": "Apache-2.0",
-  "dependencies": {
-    "reflect-metadata": "^0.2.2"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.4.14",
-    "@types/node": "^25.2.0",
-    "typescript": "^6.0.3"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/moca-labs/entity-kit-ts.git"
-  }
+	"name": "@moca-labs/entity-kit-ts",
+	"version": "0.3.0",
+	"description": "TypeScript 엔티티 데코레이터 Kit - JSON 매핑 및 직렬화",
+	"main": "dist/index.js",
+	"module": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js",
+			"require": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "rm -rf dist && tsc",
+		"demo": "vite demo"
+	},
+	"keywords": [
+		"typescript",
+		"decorator",
+		"entity",
+		"json-mapping",
+		"moca-labs"
+	],
+	"author": "IDEa Team",
+	"license": "Apache-2.0",
+	"devDependencies": {
+		"@biomejs/biome": "^2.5.0",
+		"@playwright/test": "^1.61.0",
+		"@types/node": "^25.9.3",
+		"@vitejs/plugin-vue": "^6.0.7",
+		"esbuild": "^0.28.1",
+		"typescript": "^6.0.3",
+		"vite": "^8.0.16",
+		"vue": "^3.5.38"
+	},
+	"publishConfig": {
+		"access": "public",
+		"registry": "https://registry.npmjs.org"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/moca-labs/entity-kit-ts.git"
+	}
 }
