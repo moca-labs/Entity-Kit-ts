@@ -32,6 +32,28 @@ interface FieldMeta {
 	customFn?: McFieldMapper | symbol;
 }
 
+// ─── Legacy metadata storage ──────────────────────────────────────────────────
+// experimentalDecorators 모드: 클래스 프로토타입 키로 필드 메타데이터를 임시 보관.
+// ENTITY 클래스 데코레이터 실행 시 Symbol.metadata로 이전.
+const legacyMetaStore = new WeakMap<object, Record<string | symbol, any>>();
+
+const getLegacyMeta = (proto: object): Record<string | symbol, any> => {
+	if (!legacyMetaStore.has(proto)) {
+		legacyMetaStore.set(proto, {});
+	}
+	return legacyMetaStore.get(proto)!;
+};
+
+// ─── Decorator mode detection ─────────────────────────────────────────────────
+const isTC39ClassContext = (ctx: any): ctx is ClassDecoratorContext =>
+	isObject(ctx) && "kind" in ctx && (ctx as any).kind === "class";
+
+const isTC39FieldContext = (ctx: any): ctx is ClassFieldDecoratorContext =>
+	isObject(ctx) && "kind" in ctx && (ctx as any).kind === "field";
+
+const isTC39MethodContext = (ctx: any): ctx is ClassMethodDecoratorContext =>
+	isObject(ctx) && "kind" in ctx && (ctx as any).kind === "method";
+
 // ─── Metadata helpers ─────────────────────────────────────────────────────────
 
 // 필드 메타데이터의 문자열 키 (Symbol.metadata 내 다른 키와 충돌 방지)
@@ -39,13 +61,13 @@ const mkFieldKey = (name: string): string => `$$mc:${name}`;
 
 // Symbol.metadata는 prototype chain으로 상속되므로
 // 부모 배열을 직접 변경하지 않도록 own 여부를 확인 후 복사
-const readOrCopyArray = <T>(meta: DecoratorMetadataObject, key: symbol): T[] => {
+const readOrCopyArray = <T>(meta: Record<string | symbol, any>, key: symbol): T[] => {
 	const val = meta[key] as T[] | undefined;
 	if (!val) return [];
 	return Object.prototype.hasOwnProperty.call(meta, key) ? val : [...val];
 };
 
-const readOrCopyMap = <K, V>(meta: DecoratorMetadataObject, key: symbol): Map<K, V> => {
+const readOrCopyMap = <K, V>(meta: Record<string | symbol, any>, key: symbol): Map<K, V> => {
 	const val = meta[key] as Map<K, V> | undefined;
 	if (!val) return new Map();
 	return Object.prototype.hasOwnProperty.call(meta, key) ? val : new Map(val);
@@ -93,7 +115,7 @@ const validateArrayType = (type: any, decorator: string): void => {
 const resolveArrayType = (type: any): [actualType: any, isArray: boolean] =>
 	Array.isArray(type) ? [type[0], true] : [type, false];
 
-const registerField = (meta: DecoratorMetadataObject, name: string, fieldMeta: FieldMeta): void => {
+const registerField = (meta: Record<string | symbol, any>, name: string, fieldMeta: FieldMeta): void => {
 	const keys = readOrCopyArray<string>(meta, FIELD_KEYS);
 	if (!keys.includes(name)) keys.push(name);
 	meta[FIELD_KEYS] = keys;
@@ -154,7 +176,64 @@ const mapBodyToInstance = (instance: any, body: any): void => {
 	}
 };
 
-// ─── Decorator factories ──────────────────────────────────────────────────────
+// ─── Legacy entity wrapper ────────────────────────────────────────────────────
+
+// experimentalDecorators 모드에서 ENTITY 클래스 데코레이터가 호출될 때:
+// 1. legacyMetaStore에서 필드 메타데이터를 읽어 Symbol.metadata로 이전
+// 2. 부모 Symbol.metadata를 prototype chain으로 상속 (TC39 동작과 동일하게)
+const applyLegacyEntityWrapper = (path: string | undefined, ctor: Function): Function => {
+	const proto = (ctor as any).prototype;
+
+	const parentCtor = Object.getPrototypeOf(ctor);
+	const parentMeta = parentCtor?.[Symbol.metadata] ?? null;
+	// Object.create으로 부모 메타($$mc:fieldname 등)를 prototype chain으로 상속
+	const meta: Record<string | symbol, any> = Object.create(parentMeta);
+	meta[ENTITY_FLAG] = true;
+
+	// TC39에서 readOrCopyArray가 prototype chain 상속으로 자동 처리하는 배열/맵 병합을
+	// legacy 모드에서는 ENTITY 데코레이터 실행 시 명시적으로 수행
+	const legacyMeta = legacyMetaStore.get(proto);
+	if (legacyMeta) {
+		for (const key of Reflect.ownKeys(legacyMeta)) {
+			if (key === FIELD_KEYS) {
+				const parentKeys = (parentMeta?.[FIELD_KEYS] as string[] | undefined) ?? [];
+				const childKeys = legacyMeta[FIELD_KEYS] as string[];
+				const merged = [...parentKeys];
+				for (const k of childKeys) {
+					if (!merged.includes(k)) merged.push(k);
+				}
+				meta[FIELD_KEYS] = merged;
+			} else if (key === SERIALIZE_FLAG) {
+				const parentProps = (parentMeta?.[SERIALIZE_FLAG] as any[] | undefined) ?? [];
+				meta[SERIALIZE_FLAG] = [...parentProps, ...(legacyMeta[SERIALIZE_FLAG] as any[])];
+			} else if (key === CUSTOM_FN_SYMBOL_MAP_KEY) {
+				const parentMap = (parentMeta?.[CUSTOM_FN_SYMBOL_MAP_KEY] as Map<any, any> | undefined) ?? new Map();
+				const childMap = legacyMeta[CUSTOM_FN_SYMBOL_MAP_KEY] as Map<any, any>;
+				meta[CUSTOM_FN_SYMBOL_MAP_KEY] = new Map([...parentMap, ...childMap]);
+			} else {
+				meta[key] = legacyMeta[key];
+			}
+		}
+	}
+
+	const NewClass = class extends (ctor as any) {
+		constructor(...args: any[]) {
+			super(...args);
+			const raw = isString(args[0]) ? JSON.parse(args[0]) : args[0];
+			const source = raw?.data !== undefined ? raw.data : raw;
+			const body = path ? findPath(source, path) ?? raw : source;
+			if (body === undefined) return;
+			mapBodyToInstance(this, body);
+		}
+	};
+
+	Object.defineProperty(NewClass, "name", { value: ctor.name });
+	(NewClass as any)[Symbol.metadata] = meta;
+
+	return NewClass;
+};
+
+// ─── TC39 decorator factories ─────────────────────────────────────────────────
 
 const createEntityWrapper = (path: string | undefined) =>
 	<T extends new (...args: any[]) => {}>(value: T, context: ClassDecoratorContext): T => {
@@ -171,17 +250,30 @@ const createEntityWrapper = (path: string | undefined) =>
 		} as T;
 	};
 
+// TC39: (_value: undefined, context) / Legacy: (prototype, propertyKey)
 const createFieldDecorator = (actualType: any, isArray: boolean, extra: Partial<FieldMeta>) =>
-	(_value: undefined, context: ClassFieldDecoratorContext): void => {
-		registerField(context.metadata, String(context.name), { type: actualType, isArray, ...extra });
+	(valueOrTarget: undefined | object, contextOrKey: ClassFieldDecoratorContext | string | symbol): void => {
+		if (isTC39FieldContext(contextOrKey)) {
+			registerField(contextOrKey.metadata as any, String(contextOrKey.name), { type: actualType, isArray, ...extra });
+		} else {
+			registerField(getLegacyMeta(valueOrTarget as object), String(contextOrKey), { type: actualType, isArray, ...extra });
+		}
 	};
 
+// TC39: (method, context) / Legacy: (prototype, methodName, descriptor)
 const createSymbolMapDecorator = (mapKey: symbol) =>
 	(sym: symbol) =>
-		(_value: Function, context: ClassMethodDecoratorContext): void => {
-			const map = readOrCopyMap<symbol, string>(context.metadata, mapKey);
-			map.set(sym, String(context.name));
-			context.metadata[mapKey] = map;
+		(valueOrTarget: Function | object, contextOrKey: ClassMethodDecoratorContext | string | symbol): void => {
+			if (isTC39MethodContext(contextOrKey)) {
+				const map = readOrCopyMap<symbol, string>(contextOrKey.metadata as any, mapKey);
+				map.set(sym, String(contextOrKey.name));
+				contextOrKey.metadata[mapKey] = map;
+			} else {
+				const meta = getLegacyMeta(valueOrTarget as object);
+				const map = readOrCopyMap<symbol, string>(meta, mapKey);
+				map.set(sym, String(contextOrKey));
+				meta[mapKey] = map;
+			}
 		};
 
 // ─── McEntity ─────────────────────────────────────────────────────────────────
@@ -191,45 +283,62 @@ const McEntity = {
 
 	/**
 	 * 사용법:
-	 *   @McEntity.ENTITY           ← 괄호 없이
+	 *   @McEntity.ENTITY           ← 괄호 없이 (TC39 / Legacy 모두 지원)
 	 *   @McEntity.ENTITY()         ← 괄호 있음
 	 *   @McEntity.ENTITY("a.b")    ← 경로 지정
 	 */
 	ENTITY(pathOrValue?: string | Function, context?: ClassDecoratorContext): any {
-		if (context !== undefined) {
-			// @McEntity.ENTITY (괄호 없음) → (value, context) 로 직접 호출됨
+		// TC39: @McEntity.ENTITY (no parens) → (Class, context)
+		if (isTC39ClassContext(context)) {
 			return createEntityWrapper(undefined)(pathOrValue as any, context);
 		}
-		if (isFunction(pathOrValue)) {
-			// 레거시 호출 방어 (native decorator 환경에서는 발생하지 않음)
-			return;
+		// Legacy: @McEntity.ENTITY (no parens) → (Class) with no context
+		if (isFunction(pathOrValue) && context === undefined) {
+			return applyLegacyEntityWrapper(undefined, pathOrValue);
 		}
-		// @McEntity.ENTITY() 또는 @McEntity.ENTITY("path")
-		return createEntityWrapper(pathOrValue as string | undefined);
+		// Factory: @McEntity.ENTITY() or @McEntity.ENTITY("path")
+		const path = isString(pathOrValue) ? pathOrValue : undefined;
+		return (value: Function, ctx?: ClassDecoratorContext): any => {
+			if (isTC39ClassContext(ctx)) {
+				return createEntityWrapper(path)(value as any, ctx);
+			}
+			return applyLegacyEntityWrapper(path, value);
+		};
 	},
 
 	/**
 	 * 사용법:
-	 *   @McEntity.SERIALIZE            ← 프로퍼티명을 JSON 키로 사용
+	 *   @McEntity.SERIALIZE            ← 프로퍼티명을 JSON 키로 사용 (TC39 / Legacy)
 	 *   @McEntity.SERIALIZE()          ← 동일
 	 *   @McEntity.SERIALIZE("myKey")   ← 커스텀 JSON 키
 	 */
-	SERIALIZE(jsonKeyOrValue?: string, context?: ClassFieldDecoratorContext): any {
-		const register = (ctx: ClassFieldDecoratorContext, jsonKey: string): void => {
-			const name = String(ctx.name);
-			const properties = readOrCopyArray<{ propertyKey: string; jsonKey: string }>(ctx.metadata, SERIALIZE_FLAG);
+	SERIALIZE(jsonKeyOrValue?: string | object, context?: ClassFieldDecoratorContext | string | symbol): any {
+		const register = (meta: Record<string | symbol, any>, name: string, jsonKey: string): void => {
+			const properties = readOrCopyArray<{ propertyKey: string; jsonKey: string }>(meta, SERIALIZE_FLAG);
 			properties.push({ propertyKey: name, jsonKey });
-			ctx.metadata[SERIALIZE_FLAG] = properties;
+			meta[SERIALIZE_FLAG] = properties;
 		};
 
-		if (context !== undefined) {
-			// @McEntity.SERIALIZE (괄호 없음)
-			register(context, String(context.name));
+		// TC39: @McEntity.SERIALIZE (no parens) → (undefined, context)
+		if (isTC39FieldContext(context)) {
+			register(context.metadata as any, String(context.name), String(context.name));
 			return;
 		}
-		// @McEntity.SERIALIZE() 또는 @McEntity.SERIALIZE("key")
-		return (_val: undefined, ctx: ClassFieldDecoratorContext): void => {
-			register(ctx, jsonKeyOrValue ?? String(ctx.name));
+		// Legacy: @McEntity.SERIALIZE (no parens) → (prototype, propertyKey)
+		if (isObject(jsonKeyOrValue) && (isString(context) || isSymbol(context))) {
+			const name = String(context);
+			register(getLegacyMeta(jsonKeyOrValue), name, name);
+			return;
+		}
+		// Factory: @McEntity.SERIALIZE() or @McEntity.SERIALIZE("key")
+		const customKey = isString(jsonKeyOrValue) ? jsonKeyOrValue : undefined;
+		return (valOrTarget: undefined | object, ctxOrKey: ClassFieldDecoratorContext | string | symbol): void => {
+			if (isTC39FieldContext(ctxOrKey)) {
+				register(ctxOrKey.metadata as any, String(ctxOrKey.name), customKey ?? String(ctxOrKey.name));
+			} else {
+				const name = String(ctxOrKey);
+				register(getLegacyMeta(valOrTarget as object), name, customKey ?? name);
+			}
 		};
 	},
 
@@ -246,8 +355,12 @@ const McEntity = {
 	},
 
 	CUSTOM_FIELD: (fn: McFieldMapper | symbol, path?: string) =>
-		(_value: undefined, context: ClassFieldDecoratorContext): void => {
-			registerField(context.metadata, String(context.name), { customFn: fn, path });
+		(valueOrTarget: undefined | object, contextOrKey: ClassFieldDecoratorContext | string | symbol): void => {
+			if (isTC39FieldContext(contextOrKey)) {
+				registerField(contextOrKey.metadata as any, String(contextOrKey.name), { customFn: fn, path });
+			} else {
+				registerField(getLegacyMeta(valueOrTarget as object), String(contextOrKey), { customFn: fn, path });
+			}
 		},
 
 	CUSTOM_FIELD_MAPPER: createSymbolMapDecorator(CUSTOM_FN_SYMBOL_MAP_KEY),
