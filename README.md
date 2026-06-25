@@ -27,6 +27,29 @@ tsconfig.json에 별도 데코레이터 설정은 필요 없습니다.
 
 ---
 
+## Vite 설정 (Vite 6+)
+
+Vite 6 이상에서는 OXC transformer가 기본으로 활성화됩니다.  
+OXC는 타입만 제거하고 TC39 Stage 3 데코레이터를 변환하지 않아, 브라우저에서 `SyntaxError`가 발생할 수 있습니다.
+
+라이브러리에 포함된 `entityKitPlugin()`을 사용하면 별도 패키지 설치 없이 해결됩니다.
+
+```ts
+// vite.config.ts
+import { entityKitPlugin } from "@moca-labs/entity-kit-ts/vite";
+import vue from "@vitejs/plugin-vue";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [entityKitPlugin(), vue()],
+});
+```
+
+> `entityKitPlugin()`은 내부적으로 OXC를 비활성화하고 esbuild로 `.ts` 파일을 변환합니다.  
+> esbuild는 Vite의 의존성으로 항상 설치돼 있으므로 추가 패키지가 필요하지 않습니다.
+
+---
+
 ## Import
 
 ```ts

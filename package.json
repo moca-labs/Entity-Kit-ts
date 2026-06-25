@@ -1,6 +1,6 @@
 {
 	"name": "@moca-labs/entity-kit-ts",
-	"version": "0.4.0",
+	"version": "0.5.1",
 	"description": "TypeScript 엔티티 데코레이터 Kit - JSON 매핑 및 직렬화",
 	"main": "dist/index.js",
 	"module": "dist/index.js",
@@ -10,6 +10,11 @@
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js",
 			"require": "./dist/index.js"
+		},
+		"./vite": {
+			"types": "./dist/vite.d.ts",
+			"import": "./dist/vite.js",
+			"require": "./dist/vite.js"
 		}
 	},
 	"files": [
@@ -35,7 +40,7 @@
 		"@vitejs/plugin-vue": "^6.0.7",
 		"esbuild": "^0.28.1",
 		"typescript": "^6.0.3",
-		"vite": "^8.0.16",
+		"vite": "^8.1.0",
 		"vue": "^3.5.38"
 	},
 	"publishConfig": {
