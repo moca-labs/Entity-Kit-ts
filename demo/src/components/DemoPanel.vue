@@ -120,13 +120,22 @@ const highlightCode = (code: string): string => {
       </div>
     </div>
 
-    <!-- Extra output (Serialize demo) -->
+    <!-- Extra output (toJson) -->
     <div v-if="activeScenario().extra" class="extra-row">
       <div class="extra-header">
         <span class="dot dot-blue" />
         <span class="io-label">{{ activeScenario().extra!.label }}</span>
       </div>
       <pre class="json-body extra-body" v-html="highlight(fmt(activeScenario().extra!.value))" />
+    </div>
+
+    <!-- Extra2 output (toRawJson) -->
+    <div v-if="activeScenario().extra2" class="extra2-row">
+      <div class="extra2-header">
+        <span class="dot dot-orange" />
+        <span class="io-label">{{ activeScenario().extra2!.label }}</span>
+      </div>
+      <pre class="json-body extra2-body" v-html="highlight(fmt(activeScenario().extra2!.value))" />
     </div>
   </div>
 </template>
@@ -257,7 +266,7 @@ const highlightCode = (code: string): string => {
 :deep(.cs) { color: #86efac; }                    /* string     "..." */
 :deep(.cc) { color: #475569; font-style: italic; }/* comment    // ... */
 
-/* Extra (serialize) */
+/* Extra (toJson) */
 .extra-row {
   border-radius: 10px;
   border: 1px solid #bfdbfe;
@@ -272,4 +281,21 @@ const highlightCode = (code: string): string => {
   border-bottom: 1px solid #bfdbfe;
 }
 .extra-body { background: #eff6ff; }
+
+/* Extra2 (toRawJson) */
+.dot-orange { background: #f97316; }
+.extra2-row {
+  border-radius: 10px;
+  border: 1px solid #fed7aa;
+  overflow: hidden;
+  background: #fff7ed;
+  box-shadow: 0 1px 3px #0001;
+}
+.extra2-header {
+  display: flex; align-items: center; gap: 7px;
+  padding: 8px 14px;
+  background: #ffedd5;
+  border-bottom: 1px solid #fed7aa;
+}
+.extra2-body { background: #fff7ed; }
 </style>

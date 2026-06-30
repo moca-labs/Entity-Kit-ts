@@ -7,6 +7,7 @@ export interface DemoScenario {
 	input: unknown;
 	output: unknown;
 	extra?: { label: string; value: unknown };
+	extra2?: { label: string; value: unknown };
 }
 
 export interface DemoConfig {
@@ -167,6 +168,45 @@ class SearchResult {
 	@McEntity.FIELD([String]) items: string[] = [];
 }
 
+// ─── 08  SERIALIZE_IGNORE ────────────────────────────────────────────────────
+
+@McEntity.ENTITY
+class AdminAccount extends McSerializable {
+	@McEntity.FIELD(String) @McEntity.SERIALIZE name = "";
+	@McEntity.FIELD(String) @McEntity.SERIALIZE role = "";
+	@McEntity.FIELD(String) @McEntity.SERIALIZE internalToken = "";
+	@McEntity.FIELD(Number) @McEntity.SERIALIZE score = 0;
+}
+
+@McEntity.ENTITY
+class PublicAccount extends AdminAccount {
+	@McEntity.SERIALIZE_IGNORE
+	internalToken = "";
+}
+
+// ─── 09  SERIALIZE exclude ────────────────────────────────────────────────────
+
+@McEntity.ENTITY
+class BankAccount extends McSerializable {
+	@McEntity.FIELD(String) @McEntity.SERIALIZE userId = "";
+	@McEntity.FIELD(String) @McEntity.SERIALIZE secretKey = "";
+	@McEntity.FIELD(Number) @McEntity.SERIALIZE balance = 0;
+}
+
+@McEntity.ENTITY
+class Transfer extends McSerializable {
+	@McEntity.FIELD(String) @McEntity.SERIALIZE txId = "";
+	@McEntity.FIELD(BankAccount)
+	@McEntity.SERIALIZE(["secretKey"])
+	from: BankAccount = new BankAccount();
+	@McEntity.FIELD(BankAccount)
+	@McEntity.SERIALIZE("to", ["secretKey"])
+	dest: BankAccount = new BankAccount();
+}
+
+// ─── 10  toRawJson ───────────────────────────────────────────────────────────
+// 08·09 에서 정의한 PublicAccount / Transfer 를 그대로 재사용
+
 // ─── Demo data ────────────────────────────────────────────────────────────────
 
 const profileInput = {
@@ -197,6 +237,25 @@ const d07searchResponse = {
 		result: { total: 128, items: ["TypeScript", "JavaScript", "Decorator"] },
 	},
 };
+
+const d08input = {
+	name: "Alice",
+	role: "admin",
+	internalToken: "tok_secret_xyz",
+	score: 99,
+};
+const d08admin = mk(AdminAccount, d08input);
+const d08public = mk(PublicAccount, d08input);
+
+const d09input = {
+	txId: "tx-001",
+	from: { userId: "u-001", secretKey: "sk_live_abc123", balance: 500_000 },
+	dest: { userId: "u-002", secretKey: "sk_live_xyz789", balance: 200_000 },
+};
+const d09transfer = mk(Transfer, d09input);
+
+const d10account = mk(PublicAccount, d08input);
+const d10transfer = mk(Transfer, d09input);
 
 // ─── Demo configs ─────────────────────────────────────────────────────────────
 
@@ -514,6 +573,150 @@ class SearchResult { ... }`,
 				label: "@ENTITY('result')",
 				input: d07searchResponse,
 				output: toPlain(mk(SearchResult, d07searchResponse)),
+			},
+		],
+	},
+
+	{
+		id: "08",
+		title: "SERIALIZE_IGNORE",
+		badge: "SER·IGNORE",
+		color: "purple",
+		description:
+			"자식 클래스에서 부모의 @SERIALIZE를 취소. @SERIALIZE_IGNORE 를 붙이면 toJson() 결과에서 해당 필드가 제외됨. 재선언 없이는 부모 메타데이터가 prototype chain으로 상속되어 제외 불가.",
+		codeSnippet: `@McEntity.ENTITY
+class AdminAccount extends McSerializable {
+  @McEntity.FIELD(String) 
+  @McEntity.SERIALIZE 
+  name = "";
+
+  @McEntity.FIELD(String) 
+  @McEntity.SERIALIZE 
+  internalToken = "";
+
+  @McEntity.FIELD(Number) 
+  @McEntity.SERIALIZE 
+  score = 0;
+}
+
+@McEntity.ENTITY
+class PublicAccount extends AdminAccount {
+  @McEntity.SERIALIZE_IGNORE
+  internalToken = "";  // 부모의 @SERIALIZE 취소
+}`,
+		scenarios: [
+			{
+				label: "AdminAccount.toJson() — internalToken 포함",
+				input: d08input,
+				output: toPlain(d08admin),
+				extra: { label: "toJson()", value: d08admin.toJson() },
+			},
+			{
+				label: "PublicAccount.toJson() — internalToken 제외",
+				input: d08input,
+				output: toPlain(d08public),
+				extra: { label: "toJson()", value: d08public.toJson() },
+			},
+		],
+	},
+
+	{
+		id: "09",
+		title: "SERIALIZE exclude",
+		badge: "SER·EXCLUDE",
+		color: "teal",
+		description:
+			"중첩 엔티티 직렬화 시 특정 경로를 제외. @SERIALIZE(['path']) 또는 @SERIALIZE('key', ['a.b']) 형태. 점(.) 구분 깊은 경로도 지원.",
+		codeSnippet: `@McEntity.ENTITY
+class BankAccount extends McSerializable {
+  @McEntity.FIELD(String) 
+  @McEntity.SERIALIZE 
+  userId = "";
+
+  @McEntity.FIELD(String) 
+  @McEntity.SERIALIZE 
+  secretKey = "";
+
+  @McEntity.FIELD(Number) 
+  @McEntity.SERIALIZE 
+  balance = 0;
+}
+
+@McEntity.ENTITY
+class Transfer extends McSerializable {
+  @McEntity.FIELD(String) 
+  @McEntity.SERIALIZE 
+  txId = "";
+
+  @McEntity.FIELD(BankAccount)
+  @McEntity.SERIALIZE(["secretKey"])   // secretKey 제외
+  from: BankAccount = new BankAccount();
+
+  @McEntity.FIELD(BankAccount)
+  @McEntity.SERIALIZE("to", ["secretKey"])  // rename + 제외
+  dest: BankAccount = new BankAccount();
+}`,
+		scenarios: [
+			{
+				label: "BankAccount 단독 toJson() — secretKey 포함",
+				input: d09input.from,
+				output: toPlain(mk(BankAccount, d09input.from)),
+				extra: {
+					label: "BankAccount.toJson()",
+					value: mk(BankAccount, d09input.from).toJson(),
+				},
+			},
+			{
+				label: "Transfer.toJson() — secretKey 제외, dest 로 rename",
+				input: d09input,
+				output: toPlain(d09transfer),
+				extra: { label: "Transfer.toJson()", value: d09transfer.toJson() },
+			},
+		],
+	},
+
+	{
+		id: "10",
+		title: "toRawJson",
+		badge: "RAW·JSON",
+		color: "orange",
+		description:
+			"toJson()은 네트워크 전송용 — SERIALIZE_IGNORE 필드와 exclude 경로를 제거. toRawJson()은 로컬 저장용 — @SERIALIZE가 붙은 모든 필드를 그대로 포함. 세션스토리지·로컬스토리지 저장 시 toRawJson()을 사용하면 ignore 설정으로 인한 데이터 유실을 방지할 수 있음.",
+		codeSnippet: `// 세션스토리지 저장: toRawJson() 사용 (ignore/exclude 무시)
+sessionStorage.setItem("session", JSON.stringify(account.toRawJson()));
+
+// 네트워크 전송: toJson() 사용 (ignore/exclude 적용)
+await fetch("/api/me", { body: JSON.stringify(account.toJson()) });
+
+// 복원: 저장할 때 ignore된 필드도 정상 복원됨
+const saved = JSON.parse(sessionStorage.getItem("session")!);
+const restored = new PublicAccount(saved);`,
+		scenarios: [
+			{
+				label: "SERIALIZE_IGNORE — internalToken",
+				input: d08input,
+				output: toPlain(d10account),
+				extra: {
+					label: "toJson() — 네트워크 전송, internalToken 제외",
+					value: d10account.toJson(),
+				},
+				extra2: {
+					label: "toRawJson() — 로컬 저장, internalToken 포함",
+					value: d10account.toRawJson(),
+				},
+			},
+			{
+				label: "exclude 경로 — secretKey",
+				input: d09input,
+				output: toPlain(d10transfer),
+				extra: {
+					label: "toJson() — 네트워크 전송, secretKey 제외",
+					value: d10transfer.toJson(),
+				},
+				extra2: {
+					label: "toRawJson() — 로컬 저장, secretKey 포함",
+					value: d10transfer.toRawJson(),
+				},
 			},
 		],
 	},
