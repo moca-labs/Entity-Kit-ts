@@ -1,5 +1,21 @@
-import { getLegacyMeta, isTC39FieldContext, readOrCopyArray, SERIALIZE_FLAG } from "../core/McEntityCore";
+import { McPropertyDecorator } from "../core/field/McFieldCore";
+import { isTC39FieldContext } from "../core/McEntityCore";
+import type { McEntityMetadata } from "../core/McEntityMetadata";
 import { isObject, isString, isSymbol } from "../core/McTypeUtils";
+
+/** 필드 하나를 SERIALIZE_FLAG 목록에 등록한다 (커스텀 JSON 키 / 중첩 경로 제외 옵션 포함). */
+class McSerializePropRegistration extends McPropertyDecorator {
+	constructor(
+		private readonly jsonKeyOverride?: string,
+		private readonly exclude?: string[],
+	) {
+		super();
+	}
+
+	protected applyTo(metadata: McEntityMetadata, name: string): void {
+		metadata.registerSerializeProp({ propertyKey: name, jsonKey: this.jsonKeyOverride ?? name, ...(this.exclude ? { exclude: this.exclude } : {}) });
+	}
+}
 
 /**
  * 필드를 toJson() 직렬화 대상으로 등록합니다.
@@ -11,21 +27,14 @@ import { isObject, isString, isSymbol } from "../core/McTypeUtils";
  *   @McEntity.SERIALIZE("myKey", ["a.b", "c"])   ← 커스텀 키 + 경로 제외
  */
 export function SERIALIZE(arg1?: string | string[] | object, arg2?: string[] | ClassFieldDecoratorContext | string | symbol): any {
-	const register = (meta: Record<string | symbol, any>, name: string, jsonKey: string, exclude?: string[]): void => {
-		const properties = readOrCopyArray<{ propertyKey: string; jsonKey: string; exclude?: string[] }>(meta, SERIALIZE_FLAG);
-		properties.push({ propertyKey: name, jsonKey, ...(exclude ? { exclude } : {}) });
-		meta[SERIALIZE_FLAG] = properties;
-	};
-
 	// TC39: @SERIALIZE (no parens) → (undefined, context)
 	if (isTC39FieldContext(arg2)) {
-		register(arg2.metadata as any, String(arg2.name), String(arg2.name));
+		new McSerializePropRegistration().applyToTarget(undefined, arg2);
 		return;
 	}
 	// Legacy: @SERIALIZE (no parens) → (prototype, propertyKey)
 	if (isObject(arg1) && (isString(arg2) || isSymbol(arg2))) {
-		const name = String(arg2);
-		register(getLegacyMeta(arg1 as object), name, name);
+		new McSerializePropRegistration().applyToTarget(arg1, arg2);
 		return;
 	}
 	// Factory forms: @SERIALIZE() / @SERIALIZE("key") / @SERIALIZE(["path"]) / @SERIALIZE("key", ["path"])
@@ -37,12 +46,5 @@ export function SERIALIZE(arg1?: string | string[] | object, arg2?: string[] | C
 		customKey = arg1;
 		if (Array.isArray(arg2)) exclude = arg2 as string[];
 	}
-	return (valOrTarget: undefined | object, ctxOrKey: ClassFieldDecoratorContext | string | symbol): void => {
-		if (isTC39FieldContext(ctxOrKey)) {
-			register(ctxOrKey.metadata as any, String(ctxOrKey.name), customKey ?? String(ctxOrKey.name), exclude);
-		} else {
-			const name = String(ctxOrKey);
-			register(getLegacyMeta(valOrTarget as object), name, customKey ?? name, exclude);
-		}
-	};
+	return new McSerializePropRegistration(customKey, exclude).asDecorator();
 }

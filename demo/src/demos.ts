@@ -479,8 +479,7 @@ class SearchResult { ... }`,
 		title: "SERIALIZE_IGNORE",
 		badge: "SER·IGNORE",
 		color: "purple",
-		description:
-			"자식 클래스에서 부모의 @SERIALIZE를 취소. @SERIALIZE_IGNORE 를 붙이면 toJson() 결과에서 해당 필드가 제외됨. 재선언 없이는 부모 메타데이터가 prototype chain으로 상속되어 제외 불가.",
+		description: "자식 클래스에서 부모의 @SERIALIZE를 취소. @SERIALIZE_IGNORE 를 붙이면 toJson() 결과에서 해당 필드가 제외됨. 재선언 없이는 부모 메타데이터가 prototype chain으로 상속되어 제외 불가.",
 		codeSnippet: `@McEntity.ENTITY
 class AdminAccount extends McSerializable {
   @McEntity.FIELD(String) 

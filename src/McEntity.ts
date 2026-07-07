@@ -19,9 +19,8 @@
 // │     Legacy → @ENTITY 실행 시 WeakMap 데이터를 Symbol.metadata 로 이전    │
 // └─────────────────────────────────────────────────────────────────────────┘
 
-import { CUSTOM_FN_SYMBOL_MAP_KEY, createSymbolMapDecorator } from "./core/McEntityCore";
 import { McSerializable } from "./core/McSerializable";
-import { CUSTOM_FIELD } from "./decorators/McCustomFieldDecorator";
+import { CUSTOM_FIELD, CUSTOM_FIELD_MAPPER } from "./decorators/McCustomFieldDecorator";
 import { ENTITY } from "./decorators/McEntityDecorator";
 import { ARRAY_FIELD, FIELD } from "./decorators/McFieldDecorator";
 import { MAP_FIELD } from "./decorators/McMapFieldDecorator";
@@ -36,7 +35,7 @@ const McEntity = {
 	FIELD,
 	ARRAY_FIELD,
 	CUSTOM_FIELD,
-	CUSTOM_FIELD_MAPPER: createSymbolMapDecorator(CUSTOM_FN_SYMBOL_MAP_KEY),
+	CUSTOM_FIELD_MAPPER,
 	MAP_FIELD,
 };
 

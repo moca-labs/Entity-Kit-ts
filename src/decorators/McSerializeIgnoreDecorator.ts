@@ -1,5 +1,12 @@
-import { getLegacyMeta, isTC39FieldContext, readOrCopyArray, SERIALIZE_IGNORE_FLAG } from "../core/McEntityCore";
-import { isObject, isString, isSymbol } from "../core/McTypeUtils";
+import { McPropertyDecorator } from "../core/field/McFieldCore";
+import type { McEntityMetadata } from "../core/McEntityMetadata";
+
+/** 부모 클래스에서 상속된 @SERIALIZE 등록을 취소 대상 목록에 추가한다. */
+class McSerializeIgnoreRegistration extends McPropertyDecorator {
+	protected applyTo(metadata: McEntityMetadata, name: string): void {
+		metadata.ignoreProp(name);
+	}
+}
 
 /**
  * 부모 클래스의 @SERIALIZE 를 자식 클래스에서 취소합니다.
@@ -7,18 +14,5 @@ import { isObject, isString, isSymbol } from "../core/McTypeUtils";
  *   @McEntity.SERIALIZE_IGNORE
  */
 export function SERIALIZE_IGNORE(valueOrTarget: undefined | object, contextOrKey: ClassFieldDecoratorContext | string | symbol): void {
-	const registerIgnore = (meta: Record<string | symbol, any>, name: string): void => {
-		const ignores = readOrCopyArray<string>(meta, SERIALIZE_IGNORE_FLAG);
-		if (!ignores.includes(name)) ignores.push(name);
-		meta[SERIALIZE_IGNORE_FLAG] = ignores;
-	};
-	// TC39: (undefined, ClassFieldDecoratorContext)
-	if (isTC39FieldContext(contextOrKey)) {
-		registerIgnore(contextOrKey.metadata as any, String(contextOrKey.name));
-		return;
-	}
-	// Legacy: (prototype, propertyKey)
-	if (isObject(valueOrTarget) && (isString(contextOrKey) || isSymbol(contextOrKey))) {
-		registerIgnore(getLegacyMeta(valueOrTarget as object), String(contextOrKey));
-	}
+	new McSerializeIgnoreRegistration().applyToTarget(valueOrTarget, contextOrKey);
 }

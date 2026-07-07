@@ -1,4 +1,4 @@
-import { SERIALIZE_FLAG, SERIALIZE_IGNORE_FLAG } from "./McEntityCore";
+import { McEntityMetadata } from "./McEntityMetadata";
 import { isFunction } from "./McTypeUtils";
 
 export interface IMcSerializable {
@@ -13,12 +13,9 @@ export interface IMcSerializable {
 export class McSerializable implements IMcSerializable {
 	public toJson(): Record<string, any> {
 		const result: Record<string, any> = {};
-		const meta = (this.constructor as any)[Symbol.metadata];
-		if (!meta) return result;
-		const properties = meta[SERIALIZE_FLAG] as Array<{ propertyKey: string; jsonKey: string; exclude?: string[] }> | undefined;
-		if (!properties) return result;
-		const ignoreSet = new Set<string>((meta[SERIALIZE_IGNORE_FLAG] as string[] | undefined) ?? []);
-		for (const prop of properties) {
+		const metadata = McEntityMetadata.of(this.constructor);
+		const ignoreSet = metadata.getIgnoredProps();
+		for (const prop of metadata.getSerializeProps()) {
 			if (ignoreSet.has(prop.propertyKey)) continue;
 			const value = (this as any)[prop.propertyKey];
 			result[prop.jsonKey] = Array.isArray(value) ? value.map((v) => this.serializeValue(v, prop.exclude)) : this.serializeValue(value, prop.exclude);
@@ -62,11 +59,7 @@ export class McSerializable implements IMcSerializable {
 	 */
 	public toRawJson(): Record<string, any> {
 		const result: Record<string, any> = {};
-		const meta = (this.constructor as any)[Symbol.metadata];
-		if (!meta) return result;
-		const properties = meta[SERIALIZE_FLAG] as Array<{ propertyKey: string; jsonKey: string }> | undefined;
-		if (!properties) return result;
-		for (const prop of properties) {
+		for (const prop of McEntityMetadata.of(this.constructor).getSerializeProps()) {
 			const value = (this as any)[prop.propertyKey];
 			result[prop.jsonKey] = Array.isArray(value) ? value.map((v) => this.serializeRawValue(v)) : this.serializeRawValue(value);
 		}

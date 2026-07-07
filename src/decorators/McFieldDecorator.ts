@@ -1,4 +1,6 @@
-import { createFieldDecorator, resolveArrayType, validateArrayType } from "../core/McEntityCore";
+import { McFieldRegistration } from "../core/field/McFieldCore";
+import { McFieldRuleFactory } from "../core/field/McFieldRuleFactory";
+import { resolveArrayType, validateArrayType } from "../core/McEntityCore";
 
 /**
  * 필드를 JSON 키로 매핑합니다. 배열은 [Type] 문법을 사용하세요.
@@ -11,7 +13,7 @@ import { createFieldDecorator, resolveArrayType, validateArrayType } from "../co
 export const FIELD = (type: any, path?: string, defaultValue: any = undefined) => {
 	validateArrayType(type, "FIELD");
 	const [actualType, isArray] = resolveArrayType(type);
-	return createFieldDecorator(actualType, isArray, { path, defaultValue });
+	return new McFieldRegistration(McFieldRuleFactory.typed(actualType, isArray, false, String, path, defaultValue)).asDecorator();
 };
 
 /** @deprecated Use @FIELD([Type]) instead. */
