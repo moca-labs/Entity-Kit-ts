@@ -5,58 +5,63 @@ import type { DemoConfig } from "../demos";
 const props = defineProps<{ demo: DemoConfig }>();
 
 const scenarioIdx = ref(0);
-watch(() => props.demo.id, () => { scenarioIdx.value = 0; });
+watch(
+	() => props.demo.id,
+	() => {
+		scenarioIdx.value = 0;
+	},
+);
 
 const activeScenario = () => props.demo.scenarios[scenarioIdx.value];
 
 const fmt = (val: unknown): string => {
-  try { return JSON.stringify(val, null, 2); } catch { return String(val); }
+	try {
+		return JSON.stringify(val, null, 2);
+	} catch {
+		return String(val);
+	}
 };
 
 // JSON 구문 강조
 const highlight = (json: string): string =>
-  json.replace(
-    /("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
-    (m) => {
-      if (/^"/.test(m)) return /:$/.test(m) ? `<span class="jk">${m}</span>` : `<span class="js">${m}</span>`;
-      if (/true|false/.test(m)) return `<span class="jb">${m}</span>`;
-      if (/null/.test(m)) return `<span class="jn">${m}</span>`;
-      return `<span class="jnum">${m}</span>`;
-    }
-  );
+	json.replace(/("(\\u[a-fA-F0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g, (m) => {
+		if (/^"/.test(m)) return /:$/.test(m) ? `<span class="jk">${m}</span>` : `<span class="js">${m}</span>`;
+		if (/true|false/.test(m)) return `<span class="jb">${m}</span>`;
+		if (/null/.test(m)) return `<span class="jn">${m}</span>`;
+		return `<span class="jnum">${m}</span>`;
+	});
 
 // TypeScript 코드 구문 강조
 const highlightCode = (code: string): string => {
-  const esc = code
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+	const esc = code.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-  return esc.split("\n").map((line) => {
-    const ci = line.indexOf("//");
-    let main = ci >= 0 ? line.slice(0, ci) : line;
-    const comment = ci >= 0 ? line.slice(ci) : "";
+	return esc
+		.split("\n")
+		.map((line) => {
+			const ci = line.indexOf("//");
+			let main = ci >= 0 ? line.slice(0, ci) : line;
+			const comment = ci >= 0 ? line.slice(ci) : "";
 
-    // 모든 치환 결과를 placeholder에 저장해두고 마지막에 복원
-    // → 이미 치환된 span 태그 안의 속성(class="cd" 등)이 재매칭되는 것을 방지
-    const parts: string[] = [];
-    const ph = (html: string) => { parts.push(html); return `\x00P${parts.length - 1}\x00`; };
+			// 모든 치환 결과를 placeholder에 저장해두고 마지막에 복원
+			// → 이미 치환된 span 태그 안의 속성(class="cd" 등)이 재매칭되는 것을 방지
+			const parts: string[] = [];
+			const ph = (html: string) => {
+				parts.push(html);
+				return `\x00P${parts.length - 1}\x00`;
+			};
 
-    main = main.replace(/"[^"]*"/g,   (m) => ph(`<span class="cs">${m}</span>`));
-    main = main.replace(/@McEntity\.\w+/g, (m) => ph(`<span class="cd">${m}</span>`));
-    main = main.replace(
-      /\b(class|extends|const|new|return|import|from|export|async|await)\b/g,
-      (m) => ph(`<span class="ck">${m}</span>`),
-    );
-    main = main.replace(
-      /\b(String|Number|Boolean|Map|Symbol|Date|null|undefined|true|false)\b/g,
-      (m) => ph(`<span class="ct">${m}</span>`),
-    );
+			main = main.replace(/"[^"]*"/g, (m) => ph(`<span class="cs">${m}</span>`));
+			main = main.replace(/@McEntity\.\w+/g, (m) => ph(`<span class="cd">${m}</span>`));
+			main = main.replace(/\b(class|extends|const|new|return|import|from|export|async|await)\b/g, (m) => ph(`<span class="ck">${m}</span>`));
+			main = main.replace(/\b(String|Number|Boolean|Map|Symbol|Date|null|undefined|true|false)\b/g, (m) => ph(`<span class="ct">${m}</span>`));
 
-    parts.forEach((v, i) => { main = main.replace(`\x00P${i}\x00`, v); });
+			parts.forEach((v, i) => {
+				main = main.replace(`\x00P${i}\x00`, v);
+			});
 
-    return main + (comment ? `<span class="cc">${comment}</span>` : "");
-  }).join("\n");
+			return main + (comment ? `<span class="cc">${comment}</span>` : "");
+		})
+		.join("\n");
 };
 </script>
 

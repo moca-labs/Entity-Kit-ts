@@ -47,18 +47,11 @@ export const getLegacyMeta = (proto: object): Record<string | symbol, any> => {
 
 // ─── Decorator mode guards ────────────────────────────────────────────────
 // context 인자의 `kind` 필드로 TC39 / Legacy 를 구분합니다.
-export const isTC39ClassContext = (ctx: any): ctx is ClassDecoratorContext =>
-	isObject(ctx) && "kind" in ctx && (ctx as any).kind === "class";
+export const isTC39ClassContext = (ctx: any): ctx is ClassDecoratorContext => isObject(ctx) && "kind" in ctx && (ctx as any).kind === "class";
 
-export const isTC39FieldContext = (
-	ctx: any,
-): ctx is ClassFieldDecoratorContext =>
-	isObject(ctx) && "kind" in ctx && (ctx as any).kind === "field";
+export const isTC39FieldContext = (ctx: any): ctx is ClassFieldDecoratorContext => isObject(ctx) && "kind" in ctx && (ctx as any).kind === "field";
 
-export const isTC39MethodContext = (
-	ctx: any,
-): ctx is ClassMethodDecoratorContext =>
-	isObject(ctx) && "kind" in ctx && (ctx as any).kind === "method";
+export const isTC39MethodContext = (ctx: any): ctx is ClassMethodDecoratorContext => isObject(ctx) && "kind" in ctx && (ctx as any).kind === "method";
 
 // ─── Metadata read / write helpers ───────────────────────────────────────
 // Symbol.metadata 는 prototype chain 으로 상속되므로,
@@ -67,29 +60,19 @@ export const isTC39MethodContext = (
 // FieldMeta 를 담는 문자열 키 (다른 라이브러리의 Symbol.metadata 키와 충돌 방지)
 export const mkFieldKey = (name: string): string => `$$mc:${name}`;
 
-export const readOrCopyArray = <T>(
-	meta: Record<string | symbol, any>,
-	key: symbol,
-): T[] => {
+export const readOrCopyArray = <T>(meta: Record<string | symbol, any>, key: symbol): T[] => {
 	const val = meta[key] as T[] | undefined;
 	if (!val) return [];
 	return Object.hasOwn(meta, key) ? val : [...val];
 };
 
-export const readOrCopyMap = <K, V>(
-	meta: Record<string | symbol, any>,
-	key: symbol,
-): Map<K, V> => {
+export const readOrCopyMap = <K, V>(meta: Record<string | symbol, any>, key: symbol): Map<K, V> => {
 	const val = meta[key] as Map<K, V> | undefined;
 	if (!val) return new Map();
 	return Object.hasOwn(meta, key) ? val : new Map(val);
 };
 
-export const registerField = (
-	meta: Record<string | symbol, any>,
-	name: string,
-	fieldMeta: FieldMeta,
-): void => {
+export const registerField = (meta: Record<string | symbol, any>, name: string, fieldMeta: FieldMeta): void => {
 	const keys = readOrCopyArray<string>(meta, FIELD_KEYS);
 	if (!keys.includes(name)) keys.push(name);
 	meta[FIELD_KEYS] = keys;
@@ -101,26 +84,11 @@ export const registerField = (
 // TC39: (_value: undefined, context) / Legacy: (prototype, propertyKey)
 export const createFieldDecorator =
 	(actualType: any, isArray: boolean, extra: Partial<FieldMeta>) =>
-	(
-		valueOrTarget: undefined | object,
-		contextOrKey: ClassFieldDecoratorContext | string | symbol,
-	): void => {
+	(valueOrTarget: undefined | object, contextOrKey: ClassFieldDecoratorContext | string | symbol): void => {
 		if (isTC39FieldContext(contextOrKey)) {
-			registerField(contextOrKey.metadata as any, String(contextOrKey.name), {
-				type: actualType,
-				isArray,
-				...extra,
-			});
+			registerField(contextOrKey.metadata as any, String(contextOrKey.name), { type: actualType, isArray, ...extra });
 		} else {
-			registerField(
-				getLegacyMeta(valueOrTarget as object),
-				String(contextOrKey),
-				{
-					type: actualType,
-					isArray,
-					...extra,
-				},
-			);
+			registerField(getLegacyMeta(valueOrTarget as object), String(contextOrKey), { type: actualType, isArray, ...extra });
 		}
 	};
 
@@ -130,15 +98,9 @@ export const createFieldDecorator =
 export const createSymbolMapDecorator =
 	(mapKey: symbol) =>
 	(sym: symbol) =>
-	(
-		valueOrTarget: object,
-		contextOrKey: ClassMethodDecoratorContext | string | symbol,
-	): void => {
+	(valueOrTarget: object, contextOrKey: ClassMethodDecoratorContext | string | symbol): void => {
 		if (isTC39MethodContext(contextOrKey)) {
-			const map = readOrCopyMap<symbol, string>(
-				contextOrKey.metadata as any,
-				mapKey,
-			);
+			const map = readOrCopyMap<symbol, string>(contextOrKey.metadata as any, mapKey);
 			map.set(sym, String(contextOrKey.name));
 			contextOrKey.metadata[mapKey] = map;
 		} else {
@@ -153,13 +115,8 @@ export const createSymbolMapDecorator =
 // validateArrayType / resolveArrayType 은 여러 데코레이터 파일이 공유합니다.
 export const validateArrayType = (type: any, decorator: string): void => {
 	if (type === Array) {
-		console.warn(
-			`[@${decorator}] Invalid type. Type information is lost at runtime for 'WalletInfo[]' or 'Array<WalletInfo>'. Use '[WalletInfo]' instead.`,
-		);
+		console.warn(`[@${decorator}] Invalid type. Type information is lost at runtime for 'WalletInfo[]' or 'Array<WalletInfo>'. Use '[WalletInfo]' instead.`);
 	}
 };
 
-export const resolveArrayType = (
-	type: any,
-): [actualType: any, isArray: boolean] =>
-	Array.isArray(type) ? [type[0], true] : [type, false];
+export const resolveArrayType = (type: any): [actualType: any, isArray: boolean] => (Array.isArray(type) ? [type[0], true] : [type, false]);

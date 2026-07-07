@@ -22,10 +22,7 @@ export function entityKitPlugin(): Plugin {
 		},
 		async transform(code, id) {
 			if (!/\.(ts|mts|cts)$/.test(id)) return null;
-			const result = await esbuildTransform(code, {
-				loader: "ts",
-				target: "es2022",
-			});
+			const result = await esbuildTransform(code, { loader: "ts", target: "es2022" });
 			return { code: result.code, map: result.map };
 		},
 	};

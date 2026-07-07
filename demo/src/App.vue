@@ -7,7 +7,7 @@ const selectedId = ref(demos[0].id);
 const activeDemo = computed(() => demos.find((d) => d.id === selectedId.value)!);
 
 const select = (id: string) => {
-  selectedId.value = id;
+	selectedId.value = id;
 };
 </script>
 

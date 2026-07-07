@@ -1,18 +1,18 @@
 {
-  "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "lib": ["ESNext"],
-    "moduleResolution": "bundler",
-    "declaration": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    "strict": true,
-    "skipLibCheck": true,
-    "esModuleInterop": true,
-    "isolatedModules": false,
-    "types": ["node"]
-  },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
+	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"lib": ["ESNext"],
+		"moduleResolution": "bundler",
+		"declaration": true,
+		"outDir": "./dist",
+		"rootDir": "./src",
+		"strict": true,
+		"skipLibCheck": true,
+		"esModuleInterop": true,
+		"isolatedModules": false,
+		"types": ["node"]
+	},
+	"include": ["src/**/*.ts"],
+	"exclude": ["node_modules", "dist", "**/*.spec.ts"]
 }

@@ -15,19 +15,13 @@ export class McSerializable implements IMcSerializable {
 		const result: Record<string, any> = {};
 		const meta = (this.constructor as any)[Symbol.metadata];
 		if (!meta) return result;
-		const properties = meta[SERIALIZE_FLAG] as
-			| Array<{ propertyKey: string; jsonKey: string; exclude?: string[] }>
-			| undefined;
+		const properties = meta[SERIALIZE_FLAG] as Array<{ propertyKey: string; jsonKey: string; exclude?: string[] }> | undefined;
 		if (!properties) return result;
-		const ignoreSet = new Set<string>(
-			(meta[SERIALIZE_IGNORE_FLAG] as string[] | undefined) ?? [],
-		);
+		const ignoreSet = new Set<string>((meta[SERIALIZE_IGNORE_FLAG] as string[] | undefined) ?? []);
 		for (const prop of properties) {
 			if (ignoreSet.has(prop.propertyKey)) continue;
 			const value = (this as any)[prop.propertyKey];
-			result[prop.jsonKey] = Array.isArray(value)
-				? value.map((v) => this.serializeValue(v, prop.exclude))
-				: this.serializeValue(value, prop.exclude);
+			result[prop.jsonKey] = Array.isArray(value) ? value.map((v) => this.serializeValue(v, prop.exclude)) : this.serializeValue(value, prop.exclude);
 		}
 		return result;
 	}
@@ -70,15 +64,11 @@ export class McSerializable implements IMcSerializable {
 		const result: Record<string, any> = {};
 		const meta = (this.constructor as any)[Symbol.metadata];
 		if (!meta) return result;
-		const properties = meta[SERIALIZE_FLAG] as
-			| Array<{ propertyKey: string; jsonKey: string }>
-			| undefined;
+		const properties = meta[SERIALIZE_FLAG] as Array<{ propertyKey: string; jsonKey: string }> | undefined;
 		if (!properties) return result;
 		for (const prop of properties) {
 			const value = (this as any)[prop.propertyKey];
-			result[prop.jsonKey] = Array.isArray(value)
-				? value.map((v) => this.serializeRawValue(v))
-				: this.serializeRawValue(value);
+			result[prop.jsonKey] = Array.isArray(value) ? value.map((v) => this.serializeRawValue(v)) : this.serializeRawValue(value);
 		}
 		return result;
 	}

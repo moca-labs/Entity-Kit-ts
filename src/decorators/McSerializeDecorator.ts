@@ -1,10 +1,5 @@
-import {
-	getLegacyMeta,
-	isTC39FieldContext,
-	readOrCopyArray,
-	SERIALIZE_FLAG,
-} from "./McEntityCore";
-import { isObject, isString, isSymbol } from "./McTypeUtils";
+import { getLegacyMeta, isTC39FieldContext, readOrCopyArray, SERIALIZE_FLAG } from "../core/McEntityCore";
+import { isObject, isString, isSymbol } from "../core/McTypeUtils";
 
 /**
  * 필드를 toJson() 직렬화 대상으로 등록합니다.
@@ -15,26 +10,10 @@ import { isObject, isString, isSymbol } from "./McTypeUtils";
  *   @McEntity.SERIALIZE(["a.b"])                 ← 중첩 경로 제외
  *   @McEntity.SERIALIZE("myKey", ["a.b", "c"])   ← 커스텀 키 + 경로 제외
  */
-export function SERIALIZE(
-	arg1?: string | string[] | object,
-	arg2?: string[] | ClassFieldDecoratorContext | string | symbol,
-): any {
-	const register = (
-		meta: Record<string | symbol, any>,
-		name: string,
-		jsonKey: string,
-		exclude?: string[],
-	): void => {
-		const properties = readOrCopyArray<{
-			propertyKey: string;
-			jsonKey: string;
-			exclude?: string[];
-		}>(meta, SERIALIZE_FLAG);
-		properties.push({
-			propertyKey: name,
-			jsonKey,
-			...(exclude ? { exclude } : {}),
-		});
+export function SERIALIZE(arg1?: string | string[] | object, arg2?: string[] | ClassFieldDecoratorContext | string | symbol): any {
+	const register = (meta: Record<string | symbol, any>, name: string, jsonKey: string, exclude?: string[]): void => {
+		const properties = readOrCopyArray<{ propertyKey: string; jsonKey: string; exclude?: string[] }>(meta, SERIALIZE_FLAG);
+		properties.push({ propertyKey: name, jsonKey, ...(exclude ? { exclude } : {}) });
 		meta[SERIALIZE_FLAG] = properties;
 	};
 
@@ -58,25 +37,12 @@ export function SERIALIZE(
 		customKey = arg1;
 		if (Array.isArray(arg2)) exclude = arg2 as string[];
 	}
-	return (
-		valOrTarget: undefined | object,
-		ctxOrKey: ClassFieldDecoratorContext | string | symbol,
-	): void => {
+	return (valOrTarget: undefined | object, ctxOrKey: ClassFieldDecoratorContext | string | symbol): void => {
 		if (isTC39FieldContext(ctxOrKey)) {
-			register(
-				ctxOrKey.metadata as any,
-				String(ctxOrKey.name),
-				customKey ?? String(ctxOrKey.name),
-				exclude,
-			);
+			register(ctxOrKey.metadata as any, String(ctxOrKey.name), customKey ?? String(ctxOrKey.name), exclude);
 		} else {
 			const name = String(ctxOrKey);
-			register(
-				getLegacyMeta(valOrTarget as object),
-				name,
-				customKey ?? name,
-				exclude,
-			);
+			register(getLegacyMeta(valOrTarget as object), name, customKey ?? name, exclude);
 		}
 	};
 }

@@ -25,22 +25,17 @@ export interface DemoConfig {
 const toPlain = (val: unknown, depth = 0): unknown => {
 	if (depth > 6 || val === null || val === undefined) return val;
 	if (val instanceof Date) return val.toISOString();
-	if (val instanceof Map)
-		return Object.fromEntries(
-			[...val.entries()].map(([k, v]) => [String(k), toPlain(v, depth + 1)]),
-		);
+	if (val instanceof Map) return Object.fromEntries([...val.entries()].map(([k, v]) => [String(k), toPlain(v, depth + 1)]));
 	if (Array.isArray(val)) return val.map((v) => toPlain(v, depth + 1));
 	if (typeof val === "object") {
 		const obj: Record<string, unknown> = {};
-		for (const key of Object.keys(val))
-			obj[key] = toPlain((val as Record<string, unknown>)[key], depth + 1);
+		for (const key of Object.keys(val)) obj[key] = toPlain((val as Record<string, unknown>)[key], depth + 1);
 		return obj;
 	}
 	return val;
 };
 
-const mk = <T>(Cls: new (...args: any[]) => T, data: unknown): T =>
-	new Cls(data);
+const mk = <T>(Cls: new (...args: any[]) => T, data: unknown): T => new Cls(data);
 
 // ─── 01  기본 FIELD ───────────────────────────────────────────────────────────
 
@@ -103,10 +98,7 @@ class Dashboard {
 	@McEntity.MAP_FIELD(Number) scores: Map<string, number> = new Map();
 	@McEntity.MAP_FIELD(Permission, "rolePermissions", Number)
 	rolePermissions: Map<number, Permission> = new Map();
-	@McEntity.MAP_FIELD([String], "groupMembers") groupMembers: Map<
-		string,
-		string[]
-	> = new Map();
+	@McEntity.MAP_FIELD([String], "groupMembers") groupMembers: Map<string, string[]> = new Map();
 }
 
 // ─── 05  CUSTOM_FIELD ─────────────────────────────────────────────────────────
@@ -148,8 +140,7 @@ class Wallet extends McSerializable {
 @McEntity.ENTITY
 class UserProfile extends McSerializable {
 	@McEntity.FIELD(String) @McEntity.SERIALIZE name = "";
-	@McEntity.FIELD(Wallet) @McEntity.SERIALIZE("wallet") wallet: Wallet =
-		new Wallet();
+	@McEntity.FIELD(Wallet) @McEntity.SERIALIZE("wallet") wallet: Wallet = new Wallet();
 }
 
 // ─── 07  ENTITY path ─────────────────────────────────────────────────────────
@@ -209,41 +200,18 @@ class Transfer extends McSerializable {
 
 // ─── Demo data ────────────────────────────────────────────────────────────────
 
-const profileInput = {
-	name: "Alice",
-	wallet: {
-		user_id: "u-001",
-		balance: 1_250_000,
-		isActive: true,
-		internal_token: "tok_secret_xyz",
-	},
-};
+const profileInput = { name: "Alice", wallet: { user_id: "u-001", balance: 1_250_000, isActive: true, internal_token: "tok_secret_xyz" } };
 const profileEntity = mk(UserProfile, profileInput);
 const walletEntity = mk(Wallet, profileInput.wallet);
 
 const d07apiResponse = {
 	status: 200,
-	data: {
-		id: "u-999",
-		email: "alice@example.com",
-		profile: { nickname: "alice_dev", bio: "TypeScript enthusiast" },
-		stats: { postCount: 42, likeCount: 1200 },
-	},
+	data: { id: "u-999", email: "alice@example.com", profile: { nickname: "alice_dev", bio: "TypeScript enthusiast" }, stats: { postCount: 42, likeCount: 1200 } },
 };
 
-const d07searchResponse = {
-	code: 0,
-	data: {
-		result: { total: 128, items: ["TypeScript", "JavaScript", "Decorator"] },
-	},
-};
+const d07searchResponse = { code: 0, data: { result: { total: 128, items: ["TypeScript", "JavaScript", "Decorator"] } } };
 
-const d08input = {
-	name: "Alice",
-	role: "admin",
-	internalToken: "tok_secret_xyz",
-	score: 99,
-};
+const d08input = { name: "Alice", role: "admin", internalToken: "tok_secret_xyz", score: 99 };
 const d08admin = mk(AdminAccount, d08input);
 const d08public = mk(PublicAccount, d08input);
 
@@ -265,8 +233,7 @@ export const demos: DemoConfig[] = [
 		title: "기본 FIELD",
 		badge: "@FIELD",
 		color: "blue",
-		description:
-			"String·Number·Boolean 원시 타입 매핑. JSON 키와 프로퍼티명이 일치하면 자동 변환. defaultValue 인자로 null/undefined 대체값 설정 가능.",
+		description: "String·Number·Boolean 원시 타입 매핑. JSON 키와 프로퍼티명이 일치하면 자동 변환. defaultValue 인자로 null/undefined 대체값 설정 가능.",
 		codeSnippet: `@McEntity.ENTITY
 class Product {
   @McEntity.FIELD(String)
@@ -285,15 +252,9 @@ class Product {
 			{
 				label: "기본 매핑",
 				input: { name: "MacBook Pro", price: 2_500_000, inStock: true },
-				output: toPlain(
-					mk(Product, { name: "MacBook Pro", price: 2_500_000, inStock: true }),
-				),
+				output: toPlain(mk(Product, { name: "MacBook Pro", price: 2_500_000, inStock: true })),
 			},
-			{
-				label: "defaultValue",
-				input: { name: "iPad", price: 1_200_000 },
-				output: toPlain(mk(Product, { name: "iPad", price: 1_200_000 })),
-			},
+			{ label: "defaultValue", input: { name: "iPad", price: 1_200_000 }, output: toPlain(mk(Product, { name: "iPad", price: 1_200_000 })) },
 		],
 	},
 
@@ -302,8 +263,7 @@ class Product {
 		title: "중첩 엔티티",
 		badge: "NESTED",
 		color: "purple",
-		description:
-			"@ENTITY 가 붙은 클래스를 @FIELD 타입으로 지정하면 자동 재귀 매핑. 깊이 제한 없이 중첩 가능.",
+		description: "@ENTITY 가 붙은 클래스를 @FIELD 타입으로 지정하면 자동 재귀 매핑. 깊이 제한 없이 중첩 가능.",
 		codeSnippet: `@McEntity.ENTITY
 class Address {
   @McEntity.FIELD(String)
@@ -330,24 +290,8 @@ class Employee {
 		scenarios: [
 			{
 				label: "3단계 중첩",
-				input: {
-					name: "Bob",
-					salary: 5_000_000,
-					company: {
-						name: "Moca Labs",
-						address: { city: "Seoul", street: "Gangnam-daero 123" },
-					},
-				},
-				output: toPlain(
-					mk(Employee, {
-						name: "Bob",
-						salary: 5_000_000,
-						company: {
-							name: "Moca Labs",
-							address: { city: "Seoul", street: "Gangnam-daero 123" },
-						},
-					}),
-				),
+				input: { name: "Bob", salary: 5_000_000, company: { name: "Moca Labs", address: { city: "Seoul", street: "Gangnam-daero 123" } } },
+				output: toPlain(mk(Employee, { name: "Bob", salary: 5_000_000, company: { name: "Moca Labs", address: { city: "Seoul", street: "Gangnam-daero 123" } } })),
 			},
 		],
 	},
@@ -357,8 +301,7 @@ class Employee {
 		title: "배열 필드",
 		badge: "[Type]",
 		color: "green",
-		description:
-			"배열은 반드시 [Type] 문법 사용. Array<T> 나 T[] 는 런타임에 타입 정보 소실. @ENTITY 타입 배열은 각 요소가 자동 매핑.",
+		description: "배열은 반드시 [Type] 문법 사용. Array<T> 나 T[] 는 런타임에 타입 정보 소실. @ENTITY 타입 배열은 각 요소가 자동 매핑.",
 		codeSnippet: `@McEntity.ENTITY
 class Article {
   @McEntity.FIELD(String)
@@ -405,8 +348,7 @@ class Article {
 		title: "MAP_FIELD",
 		badge: "MAP_FIELD",
 		color: "orange",
-		description:
-			"JSON 오브젝트 → Map<K, V> 변환. 키 타입(Number, String 등) 지정 가능. 값이 배열인 경우 [Type] 문법 동일 적용.",
+		description: "JSON 오브젝트 → Map<K, V> 변환. 키 타입(Number, String 등) 지정 가능. 값이 배열인 경우 [Type] 문법 동일 적용.",
 		codeSnippet: `@McEntity.ENTITY
 class Dashboard {
   @McEntity.MAP_FIELD(Number)
@@ -424,20 +366,14 @@ class Dashboard {
 				input: {
 					title: "Admin Dashboard",
 					scores: { alice: 98, bob: 87, carol: 95 },
-					rolePermissions: {
-						1: { read: true, write: true },
-						2: { read: true, write: false },
-					},
+					rolePermissions: { 1: { read: true, write: true }, 2: { read: true, write: false } },
 					groupMembers: { frontend: ["alice", "carol"], backend: ["bob"] },
 				},
 				output: toPlain(
 					mk(Dashboard, {
 						title: "Admin Dashboard",
 						scores: { alice: 98, bob: 87, carol: 95 },
-						rolePermissions: {
-							1: { read: true, write: true },
-							2: { read: true, write: false },
-						},
+						rolePermissions: { 1: { read: true, write: true }, 2: { read: true, write: false } },
 						groupMembers: { frontend: ["alice", "carol"], backend: ["bob"] },
 					}),
 				),
@@ -450,8 +386,7 @@ class Dashboard {
 		title: "커스텀 필드",
 		badge: "CUSTOM",
 		color: "pink",
-		description:
-			"복잡한 변환은 CUSTOM_FIELD 로. 인라인 함수 또는 Symbol + CUSTOM_FIELD_MAPPER 메서드 조합 지원.",
+		description: "복잡한 변환은 CUSTOM_FIELD 로. 인라인 함수 또는 Symbol + CUSTOM_FIELD_MAPPER 메서드 조합 지원.",
 		codeSnippet: `// 인라인 함수
 @McEntity.CUSTOM_FIELD((_self, raw: number) => raw / 10_000, "amount_cents")
 amountManwon = 0;
@@ -469,33 +404,13 @@ parseTags(raw: string): string[] {
 		scenarios: [
 			{
 				label: "인라인 함수",
-				input: {
-					id: "ORD-001",
-					amount_cents: 250_000,
-					created_at: "2026-06-18T09:00:00Z",
-					label: "PREMIUM",
-				},
-				output: toPlain(
-					mk(Order, {
-						id: "ORD-001",
-						amount_cents: 250_000,
-						created_at: "2026-06-18T09:00:00Z",
-						label: "PREMIUM",
-					}),
-				),
+				input: { id: "ORD-001", amount_cents: 250_000, created_at: "2026-06-18T09:00:00Z", label: "PREMIUM" },
+				output: toPlain(mk(Order, { id: "ORD-001", amount_cents: 250_000, created_at: "2026-06-18T09:00:00Z", label: "PREMIUM" })),
 			},
 			{
 				label: "CUSTOM_FIELD_MAPPER",
-				input: {
-					title: "Native Decorators 완벽 분석",
-					raw_tags: "TypeScript, decorator, Symbol.metadata",
-				},
-				output: toPlain(
-					mk(Post, {
-						title: "Native Decorators 완벽 분석",
-						raw_tags: "TypeScript, decorator, Symbol.metadata",
-					}),
-				),
+				input: { title: "Native Decorators 완벽 분석", raw_tags: "TypeScript, decorator, Symbol.metadata" },
+				output: toPlain(mk(Post, { title: "Native Decorators 완벽 분석", raw_tags: "TypeScript, decorator, Symbol.metadata" })),
 			},
 		],
 	},
@@ -505,8 +420,7 @@ parseTags(raw: string): string[] {
 		title: "직렬화",
 		badge: "SERIALIZE",
 		color: "teal",
-		description:
-			"McSerializable 상속 + @SERIALIZE 로 객체 → JSON 방향 직렬화 지원. SERIALIZE 없는 필드는 toJson() 결과에서 제외. JSON 키를 다르게 지정 가능.",
+		description: "McSerializable 상속 + @SERIALIZE 로 객체 → JSON 방향 직렬화 지원. SERIALIZE 없는 필드는 toJson() 결과에서 제외. JSON 키를 다르게 지정 가능.",
 		codeSnippet: `@McEntity.ENTITY
 class Wallet extends McSerializable {
   @McEntity.FIELD(String, "user_id") 
@@ -529,17 +443,9 @@ class Wallet extends McSerializable {
 				label: "양방향 매핑",
 				input: profileInput,
 				output: toPlain(profileEntity),
-				extra: {
-					label: "toJson() — internalToken 제외, balance_krw 키 사용",
-					value: profileEntity.toJson(),
-				},
+				extra: { label: "toJson() — internalToken 제외, balance_krw 키 사용", value: profileEntity.toJson() },
 			},
-			{
-				label: "Wallet 단독",
-				input: profileInput.wallet,
-				output: toPlain(walletEntity),
-				extra: { label: "Wallet.toJson()", value: walletEntity.toJson() },
-			},
+			{ label: "Wallet 단독", input: profileInput.wallet, output: toPlain(walletEntity), extra: { label: "Wallet.toJson()", value: walletEntity.toJson() } },
 		],
 	},
 
@@ -548,8 +454,7 @@ class Wallet extends McSerializable {
 		title: "ENTITY path",
 		badge: "PATH",
 		color: "indigo",
-		description:
-			"API 응답의 { data: ... } 래퍼는 자동 제거. @ENTITY('sub') 로 data 하위 경로를 지정. @FIELD(T, 'a.b') 로 필드별 깊은 경로 접근.",
+		description: "API 응답의 { data: ... } 래퍼는 자동 제거. @ENTITY('sub') 로 data 하위 경로를 지정. @FIELD(T, 'a.b') 로 필드별 깊은 경로 접근.",
 		codeSnippet: `// { data: { id, profile: { nickname }, stats: { postCount } } }
 @McEntity.ENTITY   // data 자동 벗김
 class UserFromApi {
@@ -564,16 +469,8 @@ class UserFromApi {
 @McEntity.ENTITY("result")   // data.result 를 body 로 사용
 class SearchResult { ... }`,
 		scenarios: [
-			{
-				label: "@ENTITY — data 자동 제거",
-				input: d07apiResponse,
-				output: toPlain(mk(UserFromApi, d07apiResponse)),
-			},
-			{
-				label: "@ENTITY('result')",
-				input: d07searchResponse,
-				output: toPlain(mk(SearchResult, d07searchResponse)),
-			},
+			{ label: "@ENTITY — data 자동 제거", input: d07apiResponse, output: toPlain(mk(UserFromApi, d07apiResponse)) },
+			{ label: "@ENTITY('result')", input: d07searchResponse, output: toPlain(mk(SearchResult, d07searchResponse)) },
 		],
 	},
 
@@ -605,18 +502,8 @@ class PublicAccount extends AdminAccount {
   internalToken = "";  // 부모의 @SERIALIZE 취소
 }`,
 		scenarios: [
-			{
-				label: "AdminAccount.toJson() — internalToken 포함",
-				input: d08input,
-				output: toPlain(d08admin),
-				extra: { label: "toJson()", value: d08admin.toJson() },
-			},
-			{
-				label: "PublicAccount.toJson() — internalToken 제외",
-				input: d08input,
-				output: toPlain(d08public),
-				extra: { label: "toJson()", value: d08public.toJson() },
-			},
+			{ label: "AdminAccount.toJson() — internalToken 포함", input: d08input, output: toPlain(d08admin), extra: { label: "toJson()", value: d08admin.toJson() } },
+			{ label: "PublicAccount.toJson() — internalToken 제외", input: d08input, output: toPlain(d08public), extra: { label: "toJson()", value: d08public.toJson() } },
 		],
 	},
 
@@ -625,8 +512,7 @@ class PublicAccount extends AdminAccount {
 		title: "SERIALIZE exclude",
 		badge: "SER·EXCLUDE",
 		color: "teal",
-		description:
-			"중첩 엔티티 직렬화 시 특정 경로를 제외. @SERIALIZE(['path']) 또는 @SERIALIZE('key', ['a.b']) 형태. 점(.) 구분 깊은 경로도 지원.",
+		description: "중첩 엔티티 직렬화 시 특정 경로를 제외. @SERIALIZE(['path']) 또는 @SERIALIZE('key', ['a.b']) 형태. 점(.) 구분 깊은 경로도 지원.",
 		codeSnippet: `@McEntity.ENTITY
 class BankAccount extends McSerializable {
   @McEntity.FIELD(String) 
@@ -661,10 +547,7 @@ class Transfer extends McSerializable {
 				label: "BankAccount 단독 toJson() — secretKey 포함",
 				input: d09input.from,
 				output: toPlain(mk(BankAccount, d09input.from)),
-				extra: {
-					label: "BankAccount.toJson()",
-					value: mk(BankAccount, d09input.from).toJson(),
-				},
+				extra: { label: "BankAccount.toJson()", value: mk(BankAccount, d09input.from).toJson() },
 			},
 			{
 				label: "Transfer.toJson() — secretKey 제외, dest 로 rename",
@@ -696,27 +579,15 @@ const restored = new PublicAccount(saved);`,
 				label: "SERIALIZE_IGNORE — internalToken",
 				input: d08input,
 				output: toPlain(d10account),
-				extra: {
-					label: "toJson() — 네트워크 전송, internalToken 제외",
-					value: d10account.toJson(),
-				},
-				extra2: {
-					label: "toRawJson() — 로컬 저장, internalToken 포함",
-					value: d10account.toRawJson(),
-				},
+				extra: { label: "toJson() — 네트워크 전송, internalToken 제외", value: d10account.toJson() },
+				extra2: { label: "toRawJson() — 로컬 저장, internalToken 포함", value: d10account.toRawJson() },
 			},
 			{
 				label: "exclude 경로 — secretKey",
 				input: d09input,
 				output: toPlain(d10transfer),
-				extra: {
-					label: "toJson() — 네트워크 전송, secretKey 제외",
-					value: d10transfer.toJson(),
-				},
-				extra2: {
-					label: "toRawJson() — 로컬 저장, secretKey 포함",
-					value: d10transfer.toRawJson(),
-				},
+				extra: { label: "toJson() — 네트워크 전송, secretKey 제외", value: d10transfer.toJson() },
+				extra2: { label: "toRawJson() — 로컬 저장, secretKey 포함", value: d10transfer.toRawJson() },
 			},
 		],
 	},

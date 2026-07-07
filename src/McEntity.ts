@@ -19,17 +19,14 @@
 // │     Legacy → @ENTITY 실행 시 WeakMap 데이터를 Symbol.metadata 로 이전    │
 // └─────────────────────────────────────────────────────────────────────────┘
 
-import { CUSTOM_FIELD } from "./McCustomFieldDecorator";
-import {
-	CUSTOM_FN_SYMBOL_MAP_KEY,
-	createSymbolMapDecorator,
-} from "./McEntityCore";
-import { ENTITY } from "./McEntityDecorator";
-import { ARRAY_FIELD, FIELD } from "./McFieldDecorator";
-import { MAP_FIELD } from "./McMapFieldDecorator";
-import { McSerializable } from "./McSerializable";
-import { SERIALIZE } from "./McSerializeDecorator";
-import { SERIALIZE_IGNORE } from "./McSerializeIgnoreDecorator";
+import { CUSTOM_FN_SYMBOL_MAP_KEY, createSymbolMapDecorator } from "./core/McEntityCore";
+import { McSerializable } from "./core/McSerializable";
+import { CUSTOM_FIELD } from "./decorators/McCustomFieldDecorator";
+import { ENTITY } from "./decorators/McEntityDecorator";
+import { ARRAY_FIELD, FIELD } from "./decorators/McFieldDecorator";
+import { MAP_FIELD } from "./decorators/McMapFieldDecorator";
+import { SERIALIZE } from "./decorators/McSerializeDecorator";
+import { SERIALIZE_IGNORE } from "./decorators/McSerializeIgnoreDecorator";
 
 const McEntity = {
 	Serializable: McSerializable,
