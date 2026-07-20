@@ -1,6 +1,6 @@
-import { McFieldRegistration } from "../core/field/McFieldCore";
-import { McFieldRuleFactory } from "../core/field/McFieldRuleFactory";
 import { resolveArrayType, validateArrayType } from "../core/McEntityCore";
+import { McFieldRegistration } from "../core/McFieldCore";
+import { McFieldRuleFactory } from "../core/McFieldRuleFactory";
 
 /**
  * 값이 Map 인 필드를 매핑합니다.

@@ -1,6 +1,5 @@
 import { isObject } from "../McTypeUtils";
 import { McFieldRule } from "./McFieldRule";
-import { resolveElement, resolveScalar } from "./McFieldValueResolver";
 
 /** @MAP_FIELD(Type, path?, keyType?) — JSON 오브젝트를 Map<K, V> 로 변환하는 필드. isArray 면 값이 배열인 맵도 지원. */
 export class McMapFieldRule extends McFieldRule {
@@ -20,12 +19,12 @@ export class McMapFieldRule extends McFieldRule {
 			return;
 		}
 		if (!isObject(rawValue)) {
-			instance[key] = resolveScalar(this.type, rawValue);
+			instance[key] = this.resolveScalar(this.type, rawValue);
 			return;
 		}
 		const map = new Map<any, any>();
 		for (const [k, v] of Object.entries(rawValue)) {
-			const value = this.isArray && Array.isArray(v) ? (v as any[]).map((item) => resolveElement(this.type, item)) : resolveElement(this.type, v);
+			const value = this.isArray && Array.isArray(v) ? (v as any[]).map((item) => this.resolveElement(this.type, item)) : this.resolveElement(this.type, v);
 			map.set(this.mapKeyType(k), value);
 		}
 		instance[key] = map;

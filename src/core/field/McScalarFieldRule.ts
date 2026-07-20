@@ -1,5 +1,4 @@
 import { McFieldRule } from "./McFieldRule";
-import { resolveScalar } from "./McFieldValueResolver";
 
 /** @FIELD(String|Number|Boolean|CustomClass) — 배열도 맵도 아닌 단일 값 필드. */
 export class McScalarFieldRule extends McFieldRule {
@@ -12,6 +11,6 @@ export class McScalarFieldRule extends McFieldRule {
 	}
 
 	apply(instance: any, key: string, rawValue: any): void {
-		instance[key] = rawValue !== undefined && rawValue !== null ? resolveScalar(this.type, rawValue) : this.defaultValue;
+		instance[key] = rawValue !== undefined && rawValue !== null ? this.resolveScalar(this.type, rawValue) : this.defaultValue;
 	}
 }

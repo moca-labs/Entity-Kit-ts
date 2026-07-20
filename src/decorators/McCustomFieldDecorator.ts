@@ -1,7 +1,7 @@
-import { McFieldRegistration, McMethodPropertyDecorator } from "../core/field/McFieldCore";
-import { McFieldRuleFactory } from "../core/field/McFieldRuleFactory";
 import type { McFieldMapper } from "../core/McEntityCore";
 import type { McEntityMetadata } from "../core/McEntityMetadata";
+import { McFieldRegistration, McMethodPropertyDecorator } from "../core/McFieldCore";
+import { McFieldRuleFactory } from "../core/McFieldRuleFactory";
 
 /**
  * 커스텀 변환 함수 또는 메서드 심볼로 필드를 매핑합니다.
@@ -12,7 +12,7 @@ import type { McEntityMetadata } from "../core/McEntityMetadata";
 export const CUSTOM_FIELD = (fn: McFieldMapper | symbol, path?: string) => new McFieldRegistration(McFieldRuleFactory.custom(fn, path)).asDecorator();
 
 /** @CUSTOM_FIELD(심볼) 이 가리키는 메서드 이름을 등록한다. */
-class McCustomFnRegistration extends McMethodPropertyDecorator {
+class McCustomFieldRegistration extends McMethodPropertyDecorator {
 	constructor(private readonly sym: symbol) {
 		super();
 	}
@@ -30,4 +30,4 @@ class McCustomFnRegistration extends McMethodPropertyDecorator {
  *   @McEntity.CUSTOM_FIELD_MAPPER(PARSE_TAGS)
  *   parseTags(raw: string): string[] { ... }
  */
-export const CUSTOM_FIELD_MAPPER = (sym: symbol) => new McCustomFnRegistration(sym).asDecorator();
+export const CUSTOM_FIELD_MAPPER = (sym: symbol) => new McCustomFieldRegistration(sym).asDecorator();

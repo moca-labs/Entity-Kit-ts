@@ -1,5 +1,4 @@
 import { McFieldRule } from "./McFieldRule";
-import { resolveElement, resolveScalar } from "./McFieldValueResolver";
 
 /** @FIELD([Type]) — 배열 필드. 각 원소는 @ENTITY 타입이면 생성자로, 아니면 함수 호출로 해석된다. */
 export class McArrayFieldRule extends McFieldRule {
@@ -17,6 +16,6 @@ export class McArrayFieldRule extends McFieldRule {
 			return;
 		}
 		// rawValue 가 실제 배열이 아니면(기존 동작 보존) 스칼라 해석으로 fallback
-		instance[key] = Array.isArray(rawValue) ? rawValue.map((item) => resolveElement(this.type, item)) : resolveScalar(this.type, rawValue);
+		instance[key] = Array.isArray(rawValue) ? rawValue.map((item) => this.resolveElement(this.type, item)) : this.resolveScalar(this.type, rawValue);
 	}
 }

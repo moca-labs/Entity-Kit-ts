@@ -1,5 +1,5 @@
-import { McPropertyDecorator } from "../core/field/McFieldCore";
 import type { McEntityMetadata } from "../core/McEntityMetadata";
+import { McPropertyDecorator } from "../core/McFieldCore";
 
 /** 부모 클래스에서 상속된 @SERIALIZE 등록을 취소 대상 목록에 추가한다. */
 class McSerializeIgnoreRegistration extends McPropertyDecorator {
