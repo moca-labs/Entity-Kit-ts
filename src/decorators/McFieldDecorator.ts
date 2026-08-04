@@ -13,7 +13,7 @@ import { McFieldRuleFactory } from "../core/McFieldRuleFactory";
 export const FIELD = (type: any, path?: string, defaultValue: any = undefined) => {
 	validateArrayType(type, "FIELD");
 	const [actualType, isArray] = resolveArrayType(type);
-	return new McFieldRegistration(McFieldRuleFactory.typed(actualType, isArray, false, String, path, defaultValue)).asDecorator();
+	return new McFieldRegistration(McFieldRuleFactory.typed(actualType, isArray, path, defaultValue)).asDecorator();
 };
 
 /** @deprecated Use @FIELD([Type]) instead. */

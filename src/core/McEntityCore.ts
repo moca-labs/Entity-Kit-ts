@@ -25,19 +25,21 @@ export type McFieldMapper = (self: any, data: any) => any;
 const legacyMetaStore = new WeakMap<object, Record<string | symbol, any>>();
 
 export const getLegacyMeta = (proto: object): Record<string | symbol, any> => {
-	if (!legacyMetaStore.has(proto)) {
-		legacyMetaStore.set(proto, {});
+	let meta = legacyMetaStore.get(proto);
+	if (!meta) {
+		meta = {};
+		legacyMetaStore.set(proto, meta);
 	}
-	return legacyMetaStore.get(proto) ?? {};
+	return meta;
 };
 
 // ─── Decorator mode guards ────────────────────────────────────────────────
 // context 인자의 `kind` 필드로 TC39 / Legacy 를 구분합니다.
-export const isTC39ClassContext = (ctx: any): ctx is ClassDecoratorContext => isObject(ctx) && "kind" in ctx && (ctx as any).kind === "class";
+export const isTC39ClassContext = (ctx: any): ctx is ClassDecoratorContext => isObject(ctx) && (ctx as any).kind === "class";
 
-export const isTC39FieldContext = (ctx: any): ctx is ClassFieldDecoratorContext => isObject(ctx) && "kind" in ctx && (ctx as any).kind === "field";
+export const isTC39FieldContext = (ctx: any): ctx is ClassFieldDecoratorContext => isObject(ctx) && (ctx as any).kind === "field";
 
-export const isTC39MethodContext = (ctx: any): ctx is ClassMethodDecoratorContext => isObject(ctx) && "kind" in ctx && (ctx as any).kind === "method";
+export const isTC39MethodContext = (ctx: any): ctx is ClassMethodDecoratorContext => isObject(ctx) && (ctx as any).kind === "method";
 
 // ─── Field type helpers ────────────────────────────────────────────────────
 // FIELD / MAP_FIELD 가 공유하는 [Type] 문법 해석 로직.

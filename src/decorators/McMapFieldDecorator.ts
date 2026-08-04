@@ -11,5 +11,5 @@ import { McFieldRuleFactory } from "../core/McFieldRuleFactory";
 export const MAP_FIELD = (type: any, path?: string, keyType: any = String) => {
 	validateArrayType(type, "MAP_FIELD");
 	const [actualType, isArray] = resolveArrayType(type);
-	return new McFieldRegistration(McFieldRuleFactory.typed(actualType, isArray, true, keyType, path, undefined)).asDecorator();
+	return new McFieldRegistration(McFieldRuleFactory.map(actualType, isArray, keyType, path)).asDecorator();
 };

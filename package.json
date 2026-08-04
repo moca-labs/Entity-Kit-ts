@@ -22,6 +22,7 @@
 	],
 	"scripts": {
 		"build": "rm -rf dist && tsc",
+		"prepublishOnly": "npm run build",
 		"demo": "vite demo",
 		"format": "biome format --write .",
 		"format:check": "biome format .",
@@ -38,7 +39,6 @@
 	"license": "Apache-2.0",
 	"devDependencies": {
 		"@biomejs/biome": "^2.5.2",
-		"@playwright/test": "^1.61.0",
 		"@types/node": "^25.9.3",
 		"@vitejs/plugin-vue": "^6.0.7",
 		"esbuild": "^0.28.1",
